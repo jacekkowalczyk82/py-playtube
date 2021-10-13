@@ -15,7 +15,7 @@ PLAYTUBE_TEMP = HOME + "/private/music/youtube-dl-temp"
 def open_play_list_file(file_path, playlist):
     with open(file_path, 'r') as txtfile:
         for line in txtfile:
-            print(line)
+            #print(line)
             if line not in playlist:
                 playlist[line] = "to_play"
 
@@ -51,7 +51,8 @@ def play_playlist(playlist):
                      stdout=subprocess.PIPE, 
                      stderr=subprocess.PIPE)
             stdout1, stderr1 = process1.communicate()
-            file_name = stdout1.decode("UTF-8")
+            file_name_decoded = stdout1.decode("UTF-8")
+            file_name = file_name_decoded.strip()
         
             print("stdout", stdout1)
             print("File_name", file_name)
@@ -76,7 +77,7 @@ def play_playlist(playlist):
                      stderr=subprocess.PIPE)
             stdout3, stderr3 = process3.communicate()
         
-            print("stdout", stdout3)
+            #print("stdout", stdout3)
             print("stderr",stderr3)
 
             # mark as played
