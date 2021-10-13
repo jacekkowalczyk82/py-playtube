@@ -11,25 +11,45 @@ HOME = expanduser("~")
 DEFAULT_PLAYLIST_FILE = HOME + "/.playtube-list.txt"
 PLAYTUBE_TEMP = HOME + "/private/music/youtube-dl-temp"
 
+STATUS_KEY = "status"
+TITLE_KEY = "title"
+
 
 def open_play_list_file(file_path, playlist):
     with open(file_path, 'r') as txtfile:
         for line in txtfile:
-            #print(line)
-            if line not in playlist:
-                playlist[line] = "to_play"
+            audio_url=""
+            if "#" in line:
+                line_elements = line.split("#")
+                audio_url = line_elements[0].strip()
+            else:
+                audio_url = line.strip()
+            print(line)
+            if audio_url not in playlist:
+                playlist[audio_url] = {STATUS_KEY:"to_play", TITLE_KEY:""}
 
     return playlist
     
+    
+def save_played_playlist(playlist, file_path):
+    file = open(file_path, "a") 
+    for audio in playlist:
+        file.write(f"{audio}   # {playlist[audio][TITLE_KEY]}\n")
+         
+    file.close() 
+        
 def get_audio_to_play(playlist):
+    print("DEBUG", playlist)
     to_be_played_list = []
     for audio in playlist.keys():
-        if playlist[audio] == "to_play":
+        if playlist[audio][STATUS_KEY] == "to_play":
             to_be_played_list.append(audio)
     return to_be_played_list
     
+    
 def get_next_to_play(to_be_played_list):
     return to_be_played_list[0]
+    
     
 def play_playlist(playlist):
     os.makedirs(PLAYTUBE_TEMP, exist_ok=True)
@@ -43,7 +63,7 @@ def play_playlist(playlist):
     while keep_playing == True:    
         audio = get_next_to_play(to_be_played_list)
         
-        if playlist[audio] == "to_play":
+        if playlist[audio][STATUS_KEY] == "to_play":
             
             # download 
             #youtube-dl -f 251 --get-filename --restrict-filenames $VIDEO_URL
@@ -53,7 +73,9 @@ def play_playlist(playlist):
             stdout1, stderr1 = process1.communicate()
             file_name_decoded = stdout1.decode("UTF-8")
             file_name = file_name_decoded.strip()
-        
+            
+            playlist[audio][TITLE_KEY] = file_name
+                            
             print("stdout", stdout1)
             print("File_name", file_name)
             print("stderr",stderr1)
@@ -81,7 +103,7 @@ def play_playlist(playlist):
             print("stderr",stderr3)
 
             # mark as played
-            playlist[audio] = "played"
+            playlist[audio][STATUS_KEY] = "played"
             
             #refresh to be played list 
             playlist = open_play_list_file(DEFAULT_PLAYLIST_FILE, playlist)
@@ -93,6 +115,7 @@ def play_playlist(playlist):
             
             # end of loop 
     print("All youtube songs from the list were played")
+    save_played_playlist(playlist, DEFAULT_PLAYLIST_FILE + "_played.txt")
 
     
 def main():
