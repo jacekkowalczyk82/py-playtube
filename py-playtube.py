@@ -87,9 +87,11 @@ def play_playlist(playlist):
             to_be_played_list = get_audio_to_play(playlist)
             if len(to_be_played_list) > 0:
                 keep_playing = True
+            else:
+                keep_playing = False
             
             # end of loop 
-            print("All youtube songs from the list were played")
+    print("All youtube songs from the list were played")
 
     
 def main():
