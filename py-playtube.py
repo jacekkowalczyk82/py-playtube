@@ -14,7 +14,10 @@ PLAYTUBE_TEMP = HOME + "/private/music/youtube-dl-temp"
 STATUS_KEY = "status"
 TITLE_KEY = "title"
 
+AUDIO_FORMAT = "251"
+#AUDIO_FORMAT = "140"
 
+ 
 def open_play_list_file(file_path, playlist):
     with open(file_path, 'r') as txtfile:
         for line in txtfile:
@@ -67,7 +70,7 @@ def play_playlist(playlist):
             
             # download 
             #youtube-dl -f 251 --get-filename --restrict-filenames $VIDEO_URL
-            process1 = subprocess.Popen(["youtube-dl", "-f", "251", "--get-filename", "--restrict-filenames", audio],
+            process1 = subprocess.Popen(["youtube-dl", "-f", AUDIO_FORMAT, "--get-filename", "--restrict-filenames", audio],
                      stdout=subprocess.PIPE, 
                      stderr=subprocess.PIPE)
             stdout1, stderr1 = process1.communicate()
@@ -84,7 +87,7 @@ def play_playlist(playlist):
                 print(f"File {file_name} already exist")
             else:
                 print(f"Downloading {file_name}")
-                process2 = subprocess.Popen(["youtube-dl", "-f", "251", "-o", file_name, audio],
+                process2 = subprocess.Popen(["youtube-dl", "-f", AUDIO_FORMAT, "-o", file_name, audio],
                      stdout=subprocess.PIPE, 
                      stderr=subprocess.PIPE)
                 stdout2, stderr2 = process2.communicate()
