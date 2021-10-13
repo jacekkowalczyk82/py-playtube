@@ -32,6 +32,10 @@ start the script
 
 ```
 python3 py-playtube.py 
+# or
+chmod 755 py-playtube.py 
+./py-playtube.py 
+
 ```
 
 Enjoy !!!
