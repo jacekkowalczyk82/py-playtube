@@ -31,7 +31,7 @@ def open_play_list_file(file_path, playlist):
             if audio_url not in playlist:
                 playlist[audio_url] = {STATUS_KEY:"to_play", TITLE_KEY:""}
 
-    return playlist
+    return playlist, os.path.abspath(file_path)
     
     
 def save_played_playlist(playlist, file_path):
@@ -100,7 +100,7 @@ def play_audio(file_name):
     return 0 
             
         
-def play_playlist(playlist):
+def play_playlist(playlist, file_path):
     os.makedirs(PLAYTUBE_TEMP, exist_ok=True)
     os.chdir(PLAYTUBE_TEMP)
     
@@ -127,16 +127,18 @@ def play_playlist(playlist):
             playlist[audio][STATUS_KEY] = "played"
             
             #refresh to be played list 
-            playlist = open_play_list_file(DEFAULT_PLAYLIST_FILE, playlist)
+            playlist, file_path = open_play_list_file(file_path, playlist)
             to_be_played_list = get_audio_to_play(playlist)
             if len(to_be_played_list) > 0:
                 keep_playing = True
             else:
                 keep_playing = False
             
+            save_played_playlist(playlist, file_path + "_played_temp.txt")
             # end of loop 
+            
     print("All youtube songs from the list were played")
-    save_played_playlist(playlist, DEFAULT_PLAYLIST_FILE + "_played.txt")
+    save_played_playlist(playlist, file_path + "_played.txt")
 
     
 def main(args):
@@ -145,10 +147,11 @@ def main(args):
     if len(args) > 1:
         if os.path.isfile(args[1]):
             # play the argument playlist file 
-            playlist = open_play_list_file(args[1], playlist)
+            playlist, file_path = open_play_list_file(args[1], playlist)
     else:
-        playlist = open_play_list_file(DEFAULT_PLAYLIST_FILE, playlist)
-    play_playlist(playlist)
+        playlist, file_path = open_play_list_file(DEFAULT_PLAYLIST_FILE, playlist)
+        
+    play_playlist(playlist, file_path)
     
 if __name__ == "__main__":
     # execute only if run as a script
