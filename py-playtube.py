@@ -34,8 +34,8 @@ def open_play_list_file(file_path, playlist):
     return playlist, os.path.abspath(file_path)
     
     
-def save_played_playlist(playlist, file_path):
-    file = open(file_path, "a") 
+def save_played_playlist(playlist, file_path, mode="a"):
+    file = open(file_path, mode) 
     for audio in playlist:
         file.write(f"{audio}   # {playlist[audio][TITLE_KEY]}\n")
          
@@ -134,7 +134,7 @@ def play_playlist(playlist, file_path):
             else:
                 keep_playing = False
             
-            save_played_playlist(playlist, file_path + "_played_temp.txt")
+            save_played_playlist(playlist, file_path + "_played_temp.txt", "wt")
             # end of loop 
             
     print("All youtube songs from the list were played")
