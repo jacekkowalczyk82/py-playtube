@@ -3,7 +3,7 @@
 import os
 import sys
 import subprocess
-
+import random 
 
 from os.path import expanduser
 HOME = expanduser("~")
@@ -17,6 +17,7 @@ TITLE_KEY = "title"
 AUDIO_FORMAT = "251"
 #AUDIO_FORMAT = "140"
 
+PLAY_ORDER = "LIST_ORDER"
  
 def open_play_list_file(file_path, playlist):
     with open(file_path, 'r') as txtfile:
@@ -41,12 +42,18 @@ def save_played_playlist(playlist, file_path, mode="a"):
          
     file.close() 
         
-def get_audio_to_play(playlist):
+def get_audio_to_play(playlist, play_order):
     print("DEBUG", playlist)
     to_be_played_list = []
+    
     for audio in playlist.keys():
         if playlist[audio][STATUS_KEY] == "to_play":
             to_be_played_list.append(audio)
+    #if play_order == "LIST_ORDER":
+    #    return to_be_played_list
+    if play_order == "RANDOM":
+        random.shuffle(to_be_played_list)
+    
     return to_be_played_list
     
     
@@ -104,7 +111,7 @@ def play_playlist(playlist, file_path):
     os.makedirs(PLAYTUBE_TEMP, exist_ok=True)
     os.chdir(PLAYTUBE_TEMP)
     
-    to_be_played_list = get_audio_to_play(playlist)
+    to_be_played_list = get_audio_to_play(playlist, PLAY_ORDER)
     keep_playing = False
     if len(to_be_played_list) > 0:
         keep_playing = True
@@ -128,7 +135,7 @@ def play_playlist(playlist, file_path):
             
             #refresh to be played list 
             playlist, file_path = open_play_list_file(file_path, playlist)
-            to_be_played_list = get_audio_to_play(playlist)
+            to_be_played_list = get_audio_to_play(playlist, PLAY_ORDER)
             if len(to_be_played_list) > 0:
                 keep_playing = True
             else:
@@ -142,8 +149,14 @@ def play_playlist(playlist, file_path):
 
     
 def main(args):
+    global PLAY_ORDER
     print("youtube playlist player")
     playlist = dict({})
+    if len(args) > 2:
+        # the second param can be a flag, for example SHUFFLE/RANDOM
+        if args[2] == "--random":
+            PLAY_ORDER = "RANDOM"
+
     if len(args) > 1:
         if os.path.isfile(args[1]):
             # play the argument playlist file 
