@@ -18,6 +18,12 @@ AUDIO_FORMAT = "251"
 #AUDIO_FORMAT = "140"
 
 PLAY_ORDER = "LIST_ORDER"
+
+"""
+#!/usr/bin/env bash 
+cd  /home/jacek/git/py-playtube
+python3 py-playtube.py $*
+"""
  
 def open_play_list_file(file_path, playlist):
     with open(file_path, 'r') as txtfile:
@@ -92,6 +98,42 @@ def download(playlist, audio):
     return file_name
     
 
+  
+def download_sublist(playlist, audio_youtube_list):
+    if not audio_youtube_list:
+        return ""
+    # youtube-dl -f 251 --get-filename --restrict-filenames $VIDEO_URL
+    process1 = subprocess.Popen(["youtube-dl", "-f", AUDIO_FORMAT, "--get-filename", "--restrict-filenames", audio_youtube_list],
+             stdout=subprocess.PIPE, 
+             stderr=subprocess.PIPE)
+    stdout1, stderr1 = process1.communicate()
+    file_names_decoded = stdout1.decode("UTF-8")
+    file_names_string = file_names_decoded.strip()
+    file_names_list = file_names_string.splitlines()
+    
+    playlist[audio_youtube_list][TITLE_KEY] = str(file_names_list)
+    
+    print("stdout", stdout1)
+    print("File_names", file_names_list)
+    print("playlist", playlist)
+    print("stderr",stderr1)
+    
+    print(f"Downloading {str(file_names_list)}")
+    process2 = subprocess.Popen(["youtube-dl", "-f", AUDIO_FORMAT, "--restrict-filenames", audio_youtube_list],
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.PIPE)
+    stdout2, stderr2 = process2.communicate()
+       
+    print("stdout", stdout2)
+    print("stderr",stderr2)
+            
+    for file_name in file_names_list:
+        print("File_name", file_name)
+        
+    return file_names_list
+ 
+
+
 def play_audio(file_name):
     if not file_name:
         return 1
@@ -121,9 +163,13 @@ def play_playlist(playlist, file_path):
         
         if playlist[audio][STATUS_KEY] == "to_play":
            
-            if "https" in audio:
+            if "https" in audio and "watch?v=" in audio:
                 file_name = download(playlist, audio)
                 play_audio(file_name) 
+            elif "https" in audio and "playlist?list=" in audio:
+                sublist = download_sublist(playlist, audio)
+                for file_name in sublist:
+                    play_audio(file_name)                 
             elif os.path.isfile(audio):
                 play_audio(audio) 
             else:
@@ -151,17 +197,25 @@ def play_playlist(playlist, file_path):
 def main(args):
     global PLAY_ORDER
     print("youtube playlist player")
+    print("args: " + str(args))
     playlist = dict({})
     if len(args) > 2:
+        print("DEBUG::len(args) > 2")
         # the second param can be a flag, for example SHUFFLE/RANDOM
         if args[2] == "--random":
             PLAY_ORDER = "RANDOM"
+            print("DEBUG::RANDOM")
 
     if len(args) > 1:
+        print("DEBUG::len(args) > 1")
         if os.path.isfile(args[1]):
+            print("DEBUG::os.path.isfile(args[1]) " + args[1])
             # play the argument playlist file 
             playlist, file_path = open_play_list_file(args[1], playlist)
+        else: 
+            print("DEBUG::os.path.isfile(args[1]) False")
     else:
+        print("DEBUG::else - DEFAULT playlist")
         playlist, file_path = open_play_list_file(DEFAULT_PLAYLIST_FILE, playlist)
         
     play_playlist(playlist, file_path)

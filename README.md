@@ -36,6 +36,25 @@ python3 py-playtube.py
 chmod 755 py-playtube.py 
 ./py-playtube.py 
 
+# play playlist 
+
+python3 /home/jacek/git/py-playtube/py-playtube.py /home/jacek/Music/py-playtube-kombi.txt 
+
+# play in random order
+python3 /home/jacek/git/py-playtube/py-playtube.py /home/jacek/Music/py-playtube-kombi.txt --random
+```
+
+Example script to play the playlist
+
+```
+#!/usr/bin/env bash 
+
+cd $HOME/
+python3 /home/jacek/git/py-playtube/py-playtube.py /home/jacek/Music/py-playtube-kombi.txt "$@"
+
+
+
+
 ```
 
 Enjoy !!!
