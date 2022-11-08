@@ -137,7 +137,7 @@ def download_sublist(playlist, audio_youtube_list):
 def play_audio(file_name):
     if not file_name:
         return 1
-    if not os.path.exists(file_name)
+    if not os.path.exists(file_name):
         print(f"File not found {file_name}")
         return 2
         
