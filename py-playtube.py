@@ -25,29 +25,53 @@ cd  /home/jacek/git/py-playtube
 python3 py-playtube.py $*
 """
  
-def open_play_list_file(file_path, playlist):
+def open_play_list_file(file_path, playlist_dict):
     with open(file_path, 'r') as txtfile:
         for line in txtfile:
             audio_url=""
+            title=""
             if "#" in line:
                 line_elements = line.split("#")
                 audio_url = line_elements[0].strip()
+                if "# PLAYLIST:" in line: 
+                    title = line_elements[1].strip()
+
             else:
                 audio_url = line.strip()
             print(line)
-            if audio_url not in playlist:
-                playlist[audio_url] = {STATUS_KEY:"to_play", TITLE_KEY:""}
+            if audio_url not in playlist_dict:
+                playlist_dict[audio_url] = {STATUS_KEY:"to_play", TITLE_KEY:title}
 
-    return playlist, os.path.abspath(file_path)
+    return playlist_dict, os.path.abspath(file_path)
     
     
-def save_played_playlist(playlist, file_path, mode="a"):
+def save_played_playlist(playlist_dict, file_path, mode="a"):
     file = open(file_path, mode) 
-    for audio in playlist:
-        file.write(f"{audio}   # {playlist[audio][TITLE_KEY]}\n")
+    for audio in playlist_dict:
+        file.write(f"{audio}   # {playlist_dict[audio][TITLE_KEY]}\n")
          
     file.close() 
         
+
+def add_header_to_playlist_file(header, playlist_file_path, mode="a"):
+    file = open(playlist_file_path, mode) 
+
+    file.write(f"#  {header}\n")
+         
+    file.close() 
+
+
+def add_audio_files_to_playlist_file(local_cache_dir, audio_files, playlist_file_path, mode="a"):
+    print(f"DEBUG::add_audio_files_to_playlist_file {playlist_file_path}")
+
+    file = open(playlist_file_path, mode) 
+    for audio in audio_files:
+        file.write(f"{local_cache_dir}/{audio}\n")
+         
+    file.close() 
+        
+
+
 def get_audio_to_play(playlist, play_order):
     print("DEBUG", playlist)
     to_be_played_list = []
@@ -78,6 +102,7 @@ def download(playlist, audio):
     file_name_decoded = stdout1.decode("UTF-8")
     file_name = file_name_decoded.strip()
     
+    # this will replace the title from the original playlist txt file
     playlist[audio][TITLE_KEY] = file_name
                     
     print("stdout", stdout1)
@@ -99,7 +124,8 @@ def download(playlist, audio):
     
 
   
-def download_sublist(playlist, audio_youtube_list):
+def download_sublist(playlist_dict, audio_youtube_list):
+    print("DEBUG::download_sublist")
     if not audio_youtube_list:
         return ""
     # youtube-dl -f 251 --get-filename --restrict-filenames $VIDEO_URL
@@ -111,11 +137,12 @@ def download_sublist(playlist, audio_youtube_list):
     file_names_string = file_names_decoded.strip()
     file_names_list = file_names_string.splitlines()
     
-    playlist[audio_youtube_list][TITLE_KEY] = str(file_names_list)
+    # we do not want to replace the title from the original playlist txt file
+    # playlist_dict[audio_youtube_list][TITLE_KEY] = str(file_names_list)
     
     print("stdout", stdout1)
     print("File_names", file_names_list)
-    print("playlist", playlist)
+    print("playlist_dict", playlist_dict)
     print("stderr",stderr1)
     
     print(f"Downloading {str(file_names_list)}")
@@ -153,11 +180,11 @@ def play_audio(file_name):
     return 0 
             
         
-def play_playlist(playlist, file_path):
+def play_playlist(playlist_dict, file_path):
     os.makedirs(PLAYTUBE_TEMP, exist_ok=True)
     os.chdir(PLAYTUBE_TEMP)
     
-    to_be_played_list = get_audio_to_play(playlist, PLAY_ORDER)
+    to_be_played_list = get_audio_to_play(playlist_dict, PLAY_ORDER)
     keep_playing = False
     if len(to_be_played_list) > 0:
         keep_playing = True
@@ -165,13 +192,19 @@ def play_playlist(playlist, file_path):
     while keep_playing == True:    
         audio = get_next_to_play(to_be_played_list)
         
-        if playlist[audio][STATUS_KEY] == "to_play":
+        if playlist_dict[audio][STATUS_KEY] == "to_play":
            
             if "https" in audio and "watch?v=" in audio:
-                file_name = download(playlist, audio)
+                file_name = download(playlist_dict, audio)
                 play_audio(file_name) 
             elif "https" in audio and "playlist?list=" in audio:
-                sublist = download_sublist(playlist, audio)
+                sublist = download_sublist(playlist_dict, audio)
+                # save sublist  file names list to the txt list file
+                # PLAYTUBE_TEMP/file_name
+                
+                add_header_to_playlist_file(f"{playlist_dict[audio][TITLE_KEY]} {audio}", file_path)
+                add_audio_files_to_playlist_file(PLAYTUBE_TEMP, sublist, file_path, mode="a")
+
                 for file_name in sublist:
                     play_audio(file_name)                 
             elif os.path.isfile(audio):
@@ -181,21 +214,21 @@ def play_playlist(playlist, file_path):
             
 
             # mark as played
-            playlist[audio][STATUS_KEY] = "played"
+            playlist_dict[audio][STATUS_KEY] = "played"
             
             #refresh to be played list 
-            playlist, file_path = open_play_list_file(file_path, playlist)
-            to_be_played_list = get_audio_to_play(playlist, PLAY_ORDER)
+            playlist_dict, file_path = open_play_list_file(file_path, playlist_dict)
+            to_be_played_list = get_audio_to_play(playlist_dict, PLAY_ORDER)
             if len(to_be_played_list) > 0:
                 keep_playing = True
             else:
                 keep_playing = False
             
-            save_played_playlist(playlist, file_path + "_played_temp.txt", "wt")
+            save_played_playlist(playlist_dict, file_path + "_played_temp.txt", "wt")
             # end of loop 
             
     print("All youtube songs from the list were played")
-    save_played_playlist(playlist, file_path + "_played.txt")
+    save_played_playlist(playlist_dict, file_path + "_played.txt")
 
     
 def main(args):
