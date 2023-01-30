@@ -20,10 +20,10 @@ for file_name in $(youtube-dl -f 251 --get-filename --restrict-filenames ${PLAYL
     echo "${PLAYLIST_DIR}/${file_name} " >> ~/Music/${PLAYLIST_NAME}.txt
 
 done
-fi 
 
 echo "Download the playlist"
 youtube-dl -f 251 --restrict-filenames ${PLAYLIST_URL}
+fi 
 
 echo "Random play the playlist "
 py-playtube.sh ~/Music/${PLAYLIST_NAME}.txt  --random 
