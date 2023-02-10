@@ -170,13 +170,16 @@ def play_audio(file_name):
         
     #play 
     print(f"Playing {file_name}")
-    process3 = subprocess.Popen(["mplayer", "-novideo", file_name],
-             stdout=subprocess.PIPE, 
-             stderr=subprocess.PIPE)
-    stdout3, stderr3 = process3.communicate()
+    
+    with open("/tmp/py-playtube-mplayer.log", "a") as mplayer_log:
+        with open("/tmp/py-playtube-mplayer.err.log", "a") as mplayer_err:
+            process3 = subprocess.Popen(["mplayer", "-novideo", file_name],
+             stdout=mplayer_log, 
+             stderr=mplayer_err)
+            stdout3, stderr3 = process3.communicate()
 
-    #print("stdout", stdout3)
-    print("stderr",stderr3)
+    print("mplayer::stdout ", stdout3)
+    print("mplayer::stderr ", stderr3)
     return 0 
             
         
