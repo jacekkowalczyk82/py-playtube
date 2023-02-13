@@ -94,6 +94,7 @@ def get_next_to_play(to_be_played_list):
 def download(playlist, audio):
     if not audio:
         return ""
+    print(f"Downloading {str(audio)}")
     #youtube-dl -f 251 --get-filename --restrict-filenames $VIDEO_URL
     process1 = subprocess.Popen(["youtube-dl", "-f", AUDIO_FORMAT, "--get-filename", "--restrict-filenames", audio],
              stdout=subprocess.PIPE, 
