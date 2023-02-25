@@ -66,7 +66,7 @@ def add_header_to_playlist_file(header, playlist_file_path, mode="a"):
 
 
 def add_audio_files_to_playlist_file(local_cache_dir, audio_files, playlist_file_path, mode="a"):
-    print(f"DEBUG::add_audio_files_to_playlist_file {playlist_file_path}")
+    # print(f"DEBUG::add_audio_files_to_playlist_file {playlist_file_path}")
 
     file = open(playlist_file_path, mode) 
     for audio in audio_files:
@@ -77,7 +77,7 @@ def add_audio_files_to_playlist_file(local_cache_dir, audio_files, playlist_file
 
 
 def get_audio_to_play(playlist, play_order):
-    print("DEBUG", playlist)
+    # print("DEBUG", playlist)
     to_be_played_list = []
     
     for audio in playlist.keys():
@@ -96,7 +96,6 @@ def get_next_to_play(to_be_played_list):
     
 
 def get_video_id(youtube_url):
-    #"watch?v="
     if "watch?v=" in youtube_url:
         url_elements = youtube_url.split("watch?v=")
         if "&" in url_elements[1]:
@@ -113,7 +112,7 @@ def find_local_audio_by_video_id(local_youtubedl_temp, video_id):
         if video_id in file:
             path = os.path.join(local_youtubedl_temp, file)
             # found_files.append(path)
-            print(path)
+            # print(path)
             return path
 
     # if found_files[0]:
@@ -129,10 +128,10 @@ def download_or_get_local(playlist, audio):
     print(f"video_id {str(video_id)}")
     file_name = find_local_audio_by_video_id(video_id)
     if file_name:
-        print(f"Found local audio by video_id: {Str(file_name)}")
+        print(f"Found local audio by video_id: {str(file_name)}")
               
     else:    
-        print(f"Downloading {str(audio)}")
+        print(f"\nDownloading {str(audio)}")
         #yt-dlp -f 251 --get-filename --restrict-filenames $VIDEO_URL
         #youtube-dl -f 251 --get-filename --restrict-filenames $VIDEO_URL
         process1 = subprocess.Popen([YOUTUBE_DOWNLOAD_APP, "-f", AUDIO_FORMAT, "--get-filename", "--restrict-filenames", audio],
@@ -149,27 +148,27 @@ def download_or_get_local(playlist, audio):
 
     playlist[audio][TITLE_KEY] = file_name
                     
-    print("stdout", stdout1)
+    # print("stdout", stdout1)
     print("File_name", file_name)
-    print("stderr",stderr1)
+    # print("stderr",stderr1)
 
     if os.path.isfile(file_name):
         print(f"File {file_name} already exist")
     else:
-        print(f"Downloading {file_name}")
+        print(f"\nDownloading {file_name}")
         process2 = subprocess.Popen([YOUTUBE_DOWNLOAD_APP, "-f", AUDIO_FORMAT, "-o", file_name, audio],
              stdout=subprocess.PIPE, 
              stderr=subprocess.PIPE)
         stdout2, stderr2 = process2.communicate()
     
-        print("stdout", stdout2)
-        print("stderr",stderr2)
+        # print("stdout", stdout2)
+        # print("stderr",stderr2)
     return file_name
     
 
   
 def download_sublist(playlist_dict, audio_youtube_list):
-    print("DEBUG::download_sublist")
+    print("download_sublist")
     if not audio_youtube_list:
         return ""
     # yt-dlp -f 251 --get-filename --restrict-filenames $VIDEO_URL
@@ -185,10 +184,10 @@ def download_sublist(playlist_dict, audio_youtube_list):
     # we do not want to replace the title from the original playlist txt file
     # playlist_dict[audio_youtube_list][TITLE_KEY] = str(file_names_list)
     
-    print("stdout", stdout1)
+    # print("stdout", stdout1)
     print("File_names", file_names_list)
-    print("playlist_dict", playlist_dict)
-    print("stderr",stderr1)
+    # print("playlist_dict", playlist_dict)
+    # print("stderr",stderr1)
     
     print(f"Downloading {str(file_names_list)}")
     process2 = subprocess.Popen([YOUTUBE_DOWNLOAD_APP, "-f", AUDIO_FORMAT, "--restrict-filenames", audio_youtube_list],
@@ -196,8 +195,8 @@ def download_sublist(playlist_dict, audio_youtube_list):
             stderr=subprocess.PIPE)
     stdout2, stderr2 = process2.communicate()
        
-    print("stdout", stdout2)
-    print("stderr",stderr2)
+    # print("stdout", stdout2)
+    # print("stderr",stderr2)
             
     for file_name in file_names_list:
         print("File_name", file_name)
@@ -214,7 +213,7 @@ def play_audio(file_name):
         return 2
         
     #play 
-    print(f"Playing {file_name}")
+    print(f"\nPlaying {file_name}")
     
     with open("/tmp/py-playtube-mplayer.log", "a") as mplayer_log:
         with open("/tmp/py-playtube-mplayer.err.log", "a") as mplayer_err:
@@ -223,8 +222,8 @@ def play_audio(file_name):
              stderr=mplayer_err)
             stdout3, stderr3 = process3.communicate()
 
-    print("mplayer::stdout ", stdout3)
-    print("mplayer::stderr ", stderr3)
+    # print("mplayer::stdout ", stdout3)
+    # print("mplayer::stderr ", stderr3)
     return 0 
             
         
@@ -282,26 +281,27 @@ def play_playlist(playlist_dict, file_path):
     
 def main(args):
     global PLAY_ORDER
-    print("youtube playlist player")
-    print("args: " + str(args))
+    print("YouTube playlist player")
+    # print("DEBUG::args: " + str(args))
     playlist = dict({})
     if len(args) > 2:
-        print("DEBUG::len(args) > 2")
+        # print("DEBUG::len(args) > 2")
         # the second param can be a flag, for example SHUFFLE/RANDOM
         if args[2] == "--random":
             PLAY_ORDER = "RANDOM"
-            print("DEBUG::RANDOM")
+            # print("DEBUG::RANDOM")
 
     if len(args) > 1:
-        print("DEBUG::len(args) > 1")
+        # print("DEBUG::len(args) > 1")
         if os.path.isfile(args[1]):
-            print("DEBUG::os.path.isfile(args[1]) " + args[1])
+            # print("DEBUG::os.path.isfile(args[1]) " + args[1])
             # play the argument playlist file 
             playlist, file_path = open_play_list_file(args[1], playlist)
         else: 
-            print("DEBUG::os.path.isfile(args[1]) False")
+            # print("DEBUG::os.path.isfile(args[1]) False")
+            file_path = None
     else:
-        print("DEBUG::else - DEFAULT playlist")
+        # print("DEBUG::else - DEFAULT playlist")
         playlist, file_path = open_play_list_file(DEFAULT_PLAYLIST_FILE, playlist)
 
     if file_path:    
