@@ -8,6 +8,10 @@ import random
 from os.path import expanduser
 HOME = expanduser("~")
 
+#YOUTUBE_DOWNLOAD_APP="youtube-dl"  original one but because of the recent bug I switched to yt-dlp
+
+YOUTUBE_DOWNLOAD_APP="yt-dlp"
+
 DEFAULT_PLAYLIST_FILE = HOME + "/.playtube-list.txt"
 PLAYTUBE_TEMP = HOME + "/private/music/youtube-dl-temp"
 
@@ -90,20 +94,59 @@ def get_audio_to_play(playlist, play_order):
 def get_next_to_play(to_be_played_list):
     return to_be_played_list[0]
     
-  
-def download(playlist, audio):
+
+def get_video_id(youtube_url):
+    #"watch?v="
+    if "watch?v=" in youtube_url:
+        url_elements = youtube_url.split("watch?v=")
+        if "&" in url_elements[1]:
+            url_elements2 = url_elements[1].split("&")
+            return url_elements2[0].strip()
+        else:
+            return url_elements[1].strip()
+    else:
+        return None
+
+def find_local_audio_by_video_id(local_youtubedl_temp, video_id):
+    found_files = []
+    for file in os.listdir(local_youtubedl_temp):
+        if video_id in file:
+            path = os.path.join(local_youtubedl_temp, file)
+            # found_files.append(path)
+            print(path)
+            return path
+
+    # if found_files[0]:
+    #     return found_files[0]    
+    return None;
+
+
+def download_or_get_local(playlist, audio):
     if not audio:
         return ""
-    print(f"Downloading {str(audio)}")
-    #youtube-dl -f 251 --get-filename --restrict-filenames $VIDEO_URL
-    process1 = subprocess.Popen(["youtube-dl", "-f", AUDIO_FORMAT, "--get-filename", "--restrict-filenames", audio],
+    
+    video_id = get_video_id(audio)
+    print(f"video_id {str(video_id)}")
+    file_name = find_local_audio_by_video_id(video_id)
+    if file_name:
+        print(f"Found local audio by video_id: {Str(file_name)}")
+              
+    else:    
+        print(f"Downloading {str(audio)}")
+        #yt-dlp -f 251 --get-filename --restrict-filenames $VIDEO_URL
+        #youtube-dl -f 251 --get-filename --restrict-filenames $VIDEO_URL
+        process1 = subprocess.Popen([YOUTUBE_DOWNLOAD_APP, "-f", AUDIO_FORMAT, "--get-filename", "--restrict-filenames", audio],
              stdout=subprocess.PIPE, 
              stderr=subprocess.PIPE)
-    stdout1, stderr1 = process1.communicate()
-    file_name_decoded = stdout1.decode("UTF-8")
-    file_name = file_name_decoded.strip()
+        stdout1, stderr1 = process1.communicate()
+        file_name_decoded = stdout1.decode("UTF-8")
+        file_name = file_name_decoded.strip()
     
-    # this will replace the title from the original playlist txt file
+    if not file_name:
+        # this will replace the title from the original playlist txt file
+        return None
+
+
     playlist[audio][TITLE_KEY] = file_name
                     
     print("stdout", stdout1)
@@ -114,7 +157,7 @@ def download(playlist, audio):
         print(f"File {file_name} already exist")
     else:
         print(f"Downloading {file_name}")
-        process2 = subprocess.Popen(["youtube-dl", "-f", AUDIO_FORMAT, "-o", file_name, audio],
+        process2 = subprocess.Popen([YOUTUBE_DOWNLOAD_APP, "-f", AUDIO_FORMAT, "-o", file_name, audio],
              stdout=subprocess.PIPE, 
              stderr=subprocess.PIPE)
         stdout2, stderr2 = process2.communicate()
@@ -129,8 +172,9 @@ def download_sublist(playlist_dict, audio_youtube_list):
     print("DEBUG::download_sublist")
     if not audio_youtube_list:
         return ""
+    # yt-dlp -f 251 --get-filename --restrict-filenames $VIDEO_URL
     # youtube-dl -f 251 --get-filename --restrict-filenames $VIDEO_URL
-    process1 = subprocess.Popen(["youtube-dl", "-f", AUDIO_FORMAT, "--get-filename", "--restrict-filenames", audio_youtube_list],
+    process1 = subprocess.Popen([YOUTUBE_DOWNLOAD_APP, "-f", AUDIO_FORMAT, "--get-filename", "--restrict-filenames", audio_youtube_list],
              stdout=subprocess.PIPE, 
              stderr=subprocess.PIPE)
     stdout1, stderr1 = process1.communicate()
@@ -147,7 +191,7 @@ def download_sublist(playlist_dict, audio_youtube_list):
     print("stderr",stderr1)
     
     print(f"Downloading {str(file_names_list)}")
-    process2 = subprocess.Popen(["youtube-dl", "-f", AUDIO_FORMAT, "--restrict-filenames", audio_youtube_list],
+    process2 = subprocess.Popen([YOUTUBE_DOWNLOAD_APP, "-f", AUDIO_FORMAT, "--restrict-filenames", audio_youtube_list],
             stdout=subprocess.PIPE, 
             stderr=subprocess.PIPE)
     stdout2, stderr2 = process2.communicate()
@@ -199,7 +243,8 @@ def play_playlist(playlist_dict, file_path):
         if playlist_dict[audio][STATUS_KEY] == "to_play":
            
             if "https" in audio and "watch?v=" in audio:
-                file_name = download(playlist_dict, audio)
+                
+                file_name = download_or_get_local(playlist_dict, audio)
                 play_audio(file_name) 
             elif "https" in audio and "playlist?list=" in audio:
                 sublist = download_sublist(playlist_dict, audio)
@@ -258,8 +303,11 @@ def main(args):
     else:
         print("DEBUG::else - DEFAULT playlist")
         playlist, file_path = open_play_list_file(DEFAULT_PLAYLIST_FILE, playlist)
-        
-    play_playlist(playlist, file_path)
+
+    if file_path:    
+        play_playlist(playlist, file_path)
+    else: 
+        print("No playlist file path provided")
     
 if __name__ == "__main__":
     # execute only if run as a script
