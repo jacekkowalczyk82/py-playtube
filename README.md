@@ -1,13 +1,13 @@
 # py-playtube
 
-simple python wrapper for youtube-dl and mplayer to play youtube audio from the console 
+simple python wrapper for youtube-dl or yt-dlp and mplayer to play youtube audio from the console 
 
 This is a very DRAFT code, it works for me. 
-Tested at macos and FreeBSD
+Tested at macos, FreeBSD, Linux
 
 ## Requirements
 
-Installed youtube-dl and mplayer
+Installed youtube-dl or yt-dlp and mplayer. 
 
 ## How to use it 
 
