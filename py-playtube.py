@@ -213,7 +213,7 @@ def play_audio(file_name):
         return 2
         
     #play 
-    print(f"\nPlaying {file_name}")
+    print(f"Playing {file_name}")
     
     with open("/tmp/py-playtube-mplayer.log", "a") as mplayer_log:
         with open("/tmp/py-playtube-mplayer.err.log", "a") as mplayer_err:
@@ -230,7 +230,8 @@ def play_audio(file_name):
 def play_playlist(playlist_dict, file_path):
     os.makedirs(PLAYTUBE_TEMP, exist_ok=True)
     os.chdir(PLAYTUBE_TEMP)
-    
+
+    play_counter = 0     
     to_be_played_list = get_audio_to_play(playlist_dict, PLAY_ORDER)
     keep_playing = False
     if len(to_be_played_list) > 0:
@@ -241,9 +242,15 @@ def play_playlist(playlist_dict, file_path):
         
         if playlist_dict[audio][STATUS_KEY] == "to_play":
            
+            play_counter = play_counter + 1
+            playlist_size = len(playlist_dict.keys())
+            print(f"\nPlaying audio {play_counter} of total {playlist_size}")
+        
             if "https" in audio and "watch?v=" in audio:
                 
                 file_name = download_or_get_local(playlist_dict, audio)
+
+
                 play_audio(file_name) 
             elif "https" in audio and "playlist?list=" in audio:
                 sublist = download_sublist(playlist_dict, audio)
