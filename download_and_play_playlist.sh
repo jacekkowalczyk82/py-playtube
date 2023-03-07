@@ -16,6 +16,8 @@ if [ -e ~/Music/${PLAYLIST_NAME}.txt ]; then
     echo "Music already downloaded to the given playlist file ~/Music/${PLAYLIST_NAME}.txt !!! "
 else
 
+echo "${PLAYLIST_URL} " >> ~/Music/${PLAYLIST_NAME}.txt
+
 for file_name in $(yt-dlp -f 251 --get-filename --restrict-filenames ${PLAYLIST_URL}); do 
     echo $file_name
     echo "${PLAYLIST_DIR}/${file_name} " >> ~/Music/${PLAYLIST_NAME}.txt

@@ -199,6 +199,8 @@ def download_sublist(playlist_dict, audio_youtube_list):
     # print("stderr",stderr2)
             
     for file_name in file_names_list:
+        if file_name not in playlist_dict:
+            playlist_dict[file_name] = {STATUS_KEY:"to_play", TITLE_KEY:file_name}
         print("File_name", file_name)
         
     return file_names_list
@@ -260,8 +262,11 @@ def play_playlist(playlist_dict, file_path):
                 add_header_to_playlist_file(f"{playlist_dict[audio][TITLE_KEY]} {audio}", file_path)
                 add_audio_files_to_playlist_file(PLAYTUBE_TEMP, sublist, file_path, mode="a")
 
-                for file_name in sublist:
-                    play_audio(file_name)                 
+                # as sublist is downloaded and added to the playlist dict 
+                # lests just go to the next interation of the loop
+                # for file_name in sublist:
+                    # play_audio(file_name)                 
+
             elif os.path.isfile(audio):
                 play_audio(audio) 
             else:
@@ -270,6 +275,7 @@ def play_playlist(playlist_dict, file_path):
 
             # mark as played
             playlist_dict[audio][STATUS_KEY] = "played"
+            # if this is a sublist  it will be marked as played but the individual audios will be added to the play order
             
             #refresh to be played list 
             playlist_dict, file_path = open_play_list_file(file_path, playlist_dict)
