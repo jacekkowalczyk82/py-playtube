@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from configparser import ConfigParser
+import json
 import os
 import sys
 import subprocess
@@ -13,7 +15,7 @@ HOME = expanduser("~")
 YOUTUBE_DOWNLOAD_APP="yt-dlp"
 
 DEFAULT_PLAYLIST_FILE = HOME + "/.playtube-list.txt"
-PLAYTUBE_TEMP = HOME + "/private/music/youtube-dl-temp"
+PLAYTUBE_TEMP = ""
 
 STATUS_KEY = "status"
 TITLE_KEY = "title"
@@ -29,6 +31,26 @@ cd  /home/jacek/git/py-playtube
 python3 py-playtube.py $*
 """
  
+def read_config(config_file_path):
+    config_parser = ConfigParser()
+    print(config_parser.sections())
+    # with open(config_file_path) as config_file:
+    #     config_parser.read_file(config_file)
+    config_parser.read(config_file_path)
+    print(config_parser.sections())
+    print(config_parser["default"])
+    print(dict(config_parser["default"]))
+    config = dict(config_parser["default"])
+
+    
+    if "aws" in config_parser.sections():
+        print(dict(config_parser["aws"]))
+        config.update(config_parser["aws"])
+    
+    print(config)
+    return config
+
+
 def open_play_list_file(file_path, playlist_dict):
     with open(file_path, 'r') as txtfile:
         for line in txtfile:
@@ -89,10 +111,93 @@ def get_audio_to_play(playlist, play_order):
         random.shuffle(to_be_played_list)
     
     return to_be_played_list
-    
-    
-def get_next_to_play(to_be_played_list):
-    return to_be_played_list[0]
+
+
+def get_one_message_from_queue(config):
+
+    import boto3
+    # Get the service resource
+    sqs = boto3.resource('sqs')
+
+    queue_name = config.get("playtube.queue.name")
+
+    # Get the queue. This returns an SQS.Queue instance
+    queue = sqs.get_queue_by_name(QueueName=queue_name)
+
+# You can now access identifiers and attributes
+    print(queue.url)
+    print("DelaySeconds", queue.attributes.get("DelaySeconds"))
+    print("queue attributes", str(queue.attributes))
+
+    # Process messages by printing out body and optional author name    
+    message = None
+    messages = queue.receive_messages()
+    if len(messages) > 0:
+        print(f"There shoul be some message on queue: {queue_name}")
+        message = messages[0]
+
+        # if len(queue.receive_messages()) == 1:
+        #     message = messages[0]
+        # elif len(queue.receive_messages()) > 1:
+            
+    else:
+        print("No messages in queue")
+
+    if message:
+    # for message in queue.receive_messages():
+         # Print out the body 
+        print(f"Received message on {queue_name}: {message.body}")
+
+        # Let the queue know that the message is processed
+        message.delete()
+        return message.body
+    return None   
+
+
+def get_next_to_play(file_path, playlist_dict, to_be_played_list, config):
+    print ("DEBUG::get_next_to_play")
+    if config:
+        print ("DEBUG::get_next_to_play, config yes")
+        playtube_temp = HOME + config.get("playtube.home.temp")
+        provider = config.get("playtube.queue.provider")
+        if provider and provider == "aws":
+            print ("DEBUG::get_next_to_play, config yes, AWS yes")
+            message_string = get_one_message_from_queue(config)
+            if message_string:
+                message = json.loads(message_string)
+
+                print ("DEBUG::get_next_to_play, config yes, AWS yes, message yes")
+                if message.get("action") == "ADD_AND_PLAY":
+                    audio_url = message.get("url")
+                    if audio_url:
+                        title = message.get("title")
+                        playlist_dict[audio_url] = {STATUS_KEY:"to_play", TITLE_KEY:title}
+                        add_audio_files_to_playlist_file(playtube_temp, [audio_url], file_path, mode="a")
+                        to_be_played_list.append(audio_url)
+                        return audio_url;
+                
+                elif message.get("action") == "ADD":
+                    audio_url = message.get("url")
+                    if audio_url:
+                        title = message.get("title")
+                        playlist_dict[audio_url] = {STATUS_KEY:"to_play", TITLE_KEY:title}
+                        add_audio_files_to_playlist_file(playtube_temp, [audio_url], file_path, mode="a")
+                        to_be_played_list.append(audio_url)
+                        return to_be_played_list[0];
+                else:
+                    print("Invalid message format ")
+                    return to_be_played_list[0]     
+            else:
+                print("No messages ")
+                # no queue messages, just play next one 
+                return to_be_played_list[0]                 
+
+        else:
+            print ("DEBUG::get_next_to_play, config no AWS")
+            return to_be_played_list[0]
+    else:
+        print ("DEBUG::get_next_to_play, config None")
+        return to_be_played_list[0]
     
 
 def get_video_id(youtube_url):
@@ -120,13 +225,14 @@ def find_local_audio_by_video_id(local_youtubedl_temp, video_id):
     return None;
 
 
-def download_or_get_local(playlist, audio):
+def download_or_get_local(playlist, audio, local_youtubedl_temp):
     if not audio:
         return ""
     
     video_id = get_video_id(audio)
-    print(f"video_id {str(video_id)}")
-    file_name = find_local_audio_by_video_id(video_id)
+    print(f"video_id: {str(video_id)}")
+    file_name = find_local_audio_by_video_id(local_youtubedl_temp, video_id)
+
     if file_name:
         print(f"Found local audio by video_id: {str(file_name)}")
               
@@ -229,19 +335,25 @@ def play_audio(file_name):
     return 0 
             
         
-def play_playlist(playlist_dict, file_path):
+def play_playlist(playlist_dict, file_path, config):
+    global PLAYTUBE_TEMP
+
+    PLAYTUBE_TEMP = HOME + "/" + config.get("playtube.home.temp")
+
     os.makedirs(PLAYTUBE_TEMP, exist_ok=True)
     os.chdir(PLAYTUBE_TEMP)
 
     play_counter = 0     
-    to_be_played_list = get_audio_to_play(playlist_dict, PLAY_ORDER)
+    to_be_played_list = get_audio_to_play(playlist_dict, config.get("play.order"))
     keep_playing = False
     if len(to_be_played_list) > 0:
         keep_playing = True
         
     while keep_playing == True:    
-        audio = get_next_to_play(to_be_played_list)
-        
+        audio = get_next_to_play(file_path, playlist_dict, to_be_played_list, config) 
+
+        # print (playlist_dict)
+        print ("get_next_to_play:", audio)
         if playlist_dict[audio][STATUS_KEY] == "to_play":
            
             play_counter = play_counter + 1
@@ -250,7 +362,7 @@ def play_playlist(playlist_dict, file_path):
         
             if "https" in audio and "watch?v=" in audio:
                 
-                file_name = download_or_get_local(playlist_dict, audio)
+                file_name = download_or_get_local(playlist_dict, audio, PLAYTUBE_TEMP)
 
 
                 play_audio(file_name) 
@@ -294,17 +406,23 @@ def play_playlist(playlist_dict, file_path):
     
 def main(args):
     global PLAY_ORDER
+    global PLAYTUBE_CONFIG 
+
     print("YouTube playlist player")
     # print("DEBUG::args: " + str(args))
     playlist = dict({})
-    if len(args) > 2:
-        # print("DEBUG::len(args) > 2")
-        # the second param can be a flag, for example SHUFFLE/RANDOM
-        if args[2] == "--random":
-            PLAY_ORDER = "RANDOM"
-            # print("DEBUG::RANDOM")
-
+    
     if len(args) > 1:
+        if len(args) > 2:
+            print("DEBUG::len(args) > 2")
+            print("DEBUG::args[2]: ", args[2])
+            PLAYTUBE_CONFIG = read_config(args[2])
+
+        else:
+            # from default home location 
+            # /home/jacek/.config/py-playtube
+            PLAYTUBE_CONFIG = read_config(".config/py-playtube/config.ini")
+
         # print("DEBUG::len(args) > 1")
         if os.path.isfile(args[1]):
             # print("DEBUG::os.path.isfile(args[1]) " + args[1])
@@ -316,9 +434,19 @@ def main(args):
     else:
         # print("DEBUG::else - DEFAULT playlist")
         playlist, file_path = open_play_list_file(DEFAULT_PLAYLIST_FILE, playlist)
+    
+    if not PLAYTUBE_CONFIG:
+        return 
+    
+    if PLAYTUBE_CONFIG.get("play.order"):
+        PLAY_ORDER = PLAYTUBE_CONFIG.get("play.order")
+    else:
+        PLAY_ORDER = "LIST_ORDER"
+    
+    
 
     if file_path:    
-        play_playlist(playlist, file_path)
+        play_playlist(playlist, file_path, PLAYTUBE_CONFIG)
     else: 
         print("No playlist file path provided")
     

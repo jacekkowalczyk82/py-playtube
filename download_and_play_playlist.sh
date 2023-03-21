@@ -29,4 +29,5 @@ yt-dlp -f 251 --restrict-filenames ${PLAYLIST_URL}
 fi 
 
 echo "Random play the playlist "
-py-playtube.sh ~/Music/${PLAYLIST_NAME}.txt  --random 
+# py-playtube.sh ~/Music/${PLAYLIST_NAME}.txt  /home/jacek/git/py-playtube/py-playtube-config.ini
+py-playtube.sh ~/Music/${PLAYLIST_NAME}.txt

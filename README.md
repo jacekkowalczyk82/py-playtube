@@ -58,3 +58,22 @@ python3 /home/jacek/git/py-playtube/py-playtube.py /home/jacek/Music/py-playtube
 ```
 
 Enjoy !!!
+
+
+## The py-playtube has integration with AWS sqs 
+
+The application can read from AWS SQS messages that alows to add new audio urls remotely 
+
+For example sending message to the SQS queue:
+
+```
+{
+  "action": "ADD_AND_PLAY",
+  "url": "https://www.youtube.com/watch?v=9Uj2VyG8T0I",
+  "title": "Man in the rain"
+}
+```
+
+will tell the application to add this given url to the playlist and play it as next. 
+
+
