@@ -15,7 +15,6 @@ HOME = expanduser("~")
 YOUTUBE_DOWNLOAD_APP="yt-dlp"
 
 DEFAULT_PLAYLIST_FILE = HOME + "/.playtube-list.txt"
-PLAYTUBE_TEMP = ""
 
 STATUS_KEY = "status"
 TITLE_KEY = "title"
@@ -114,7 +113,7 @@ def get_audio_to_play(playlist, play_order):
 
 
 def get_one_message_from_queue(config):
-
+    # use boto3 only when there is enabled integration with AWS SQS 
     import boto3
     # Get the service resource
     sqs = boto3.resource('sqs')
@@ -124,7 +123,7 @@ def get_one_message_from_queue(config):
     # Get the queue. This returns an SQS.Queue instance
     queue = sqs.get_queue_by_name(QueueName=queue_name)
 
-# You can now access identifiers and attributes
+    # You can now access identifiers and attributes
     print(queue.url)
     print("DelaySeconds", queue.attributes.get("DelaySeconds"))
     print("queue attributes", str(queue.attributes))
@@ -135,24 +134,16 @@ def get_one_message_from_queue(config):
     if len(messages) > 0:
         print(f"There shoul be some message on queue: {queue_name}")
         message = messages[0]
-
-        # if len(queue.receive_messages()) == 1:
-        #     message = messages[0]
-        # elif len(queue.receive_messages()) > 1:
-            
-    else:
-        print("No messages in queue")
-
-    if message:
-    # for message in queue.receive_messages():
          # Print out the body 
         print(f"Received message on {queue_name}: {message.body}")
 
         # Let the queue know that the message is processed
         message.delete()
         return message.body
-    return None   
-
+        
+    else:
+        print("No messages in queue")
+        return None  
 
 def get_next_to_play(file_path, playlist_dict, to_be_played_list, config):
     print ("DEBUG::get_next_to_play")
@@ -336,15 +327,15 @@ def play_audio(file_name):
             
         
 def play_playlist(playlist_dict, file_path, config):
-    global PLAYTUBE_TEMP
+    
+    local_playtube_temp_dir = HOME + "/" + config.get("playtube.home.temp")
 
-    PLAYTUBE_TEMP = HOME + "/" + config.get("playtube.home.temp")
-
-    os.makedirs(PLAYTUBE_TEMP, exist_ok=True)
-    os.chdir(PLAYTUBE_TEMP)
+    os.makedirs(local_playtube_temp_dir, exist_ok=True)
+    os.chdir(local_playtube_temp_dir)
+    play_order = config.get("play.order")
 
     play_counter = 0     
-    to_be_played_list = get_audio_to_play(playlist_dict, config.get("play.order"))
+    to_be_played_list = get_audio_to_play(playlist_dict, play_order)
     keep_playing = False
     if len(to_be_played_list) > 0:
         keep_playing = True
@@ -362,17 +353,17 @@ def play_playlist(playlist_dict, file_path, config):
         
             if "https" in audio and "watch?v=" in audio:
                 
-                file_name = download_or_get_local(playlist_dict, audio, PLAYTUBE_TEMP)
+                file_name = download_or_get_local(playlist_dict, audio, local_playtube_temp_dir)
 
 
                 play_audio(file_name) 
             elif "https" in audio and "playlist?list=" in audio:
                 sublist = download_sublist(playlist_dict, audio)
                 # save sublist  file names list to the txt list file
-                # PLAYTUBE_TEMP/file_name
+                # local_playtube_temp_dir/file_name
                 
                 add_header_to_playlist_file(f"{playlist_dict[audio][TITLE_KEY]} {audio}", file_path)
-                add_audio_files_to_playlist_file(PLAYTUBE_TEMP, sublist, file_path, mode="a")
+                add_audio_files_to_playlist_file(local_playtube_temp_dir, sublist, file_path, mode="a")
 
                 # as sublist is downloaded and added to the playlist dict 
                 # lests just go to the next interation of the loop
@@ -391,7 +382,7 @@ def play_playlist(playlist_dict, file_path, config):
             
             #refresh to be played list 
             playlist_dict, file_path = open_play_list_file(file_path, playlist_dict)
-            to_be_played_list = get_audio_to_play(playlist_dict, PLAY_ORDER)
+            to_be_played_list = get_audio_to_play(playlist_dict, play_order)
             if len(to_be_played_list) > 0:
                 keep_playing = True
             else:

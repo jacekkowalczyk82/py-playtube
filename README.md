@@ -72,6 +72,28 @@ For example sending message to the SQS queue:
   "url": "https://www.youtube.com/watch?v=9Uj2VyG8T0I",
   "title": "Man in the rain"
 }
+
+or 
+
+{
+  "action": "ADD_AND_PLAY",
+  "url": "https://www.youtube.com/watch?v=YMsQ5izhIDo",
+  "title": "Slodkiego milego zycia"
+}
+
+{
+  "action": "ADD_AND_PLAY",
+  "url": "https://www.youtube.com/watch?v=ivU2crJSv8w"
+}
+
+
+{
+  "action": "ADD_AND_PLAY",
+  "url": "https://www.youtube.com/watch?v=TG2JtdUEMJU",
+  "title": "Gimme all your lovin"
+
+}
+
 ```
 
 will tell the application to add this given url to the playlist and play it as next. 
