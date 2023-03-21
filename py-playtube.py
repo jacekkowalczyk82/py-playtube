@@ -95,6 +95,15 @@ def add_audio_files_to_playlist_file(local_cache_dir, audio_files, playlist_file
          
     file.close() 
         
+def add_audio_url_to_playlist_file(audio_url, playlist_file_path, mode="a"):
+    # print(f"DEBUG::add_audio_files_to_playlist_file {playlist_file_path}")
+
+    file = open(playlist_file_path, mode) 
+    file.write(f"{audio_url}\n")
+         
+    file.close() 
+        
+
 
 
 def get_audio_to_play(playlist, play_order):
@@ -163,7 +172,7 @@ def get_next_to_play(file_path, playlist_dict, to_be_played_list, config):
                     if audio_url:
                         title = message.get("title")
                         playlist_dict[audio_url] = {STATUS_KEY:"to_play", TITLE_KEY:title}
-                        add_audio_files_to_playlist_file(playtube_temp, [audio_url], file_path, mode="a")
+                        add_audio_url_to_playlist_file(audio_url, file_path, mode="a")
                         to_be_played_list.append(audio_url)
                         return audio_url;
                 
@@ -172,7 +181,7 @@ def get_next_to_play(file_path, playlist_dict, to_be_played_list, config):
                     if audio_url:
                         title = message.get("title")
                         playlist_dict[audio_url] = {STATUS_KEY:"to_play", TITLE_KEY:title}
-                        add_audio_files_to_playlist_file(playtube_temp, [audio_url], file_path, mode="a")
+                        add_audio_url_to_playlist_file(audio_url, file_path, mode="a")
                         to_be_played_list.append(audio_url)
                         return to_be_played_list[0];
                 else:
