@@ -63,7 +63,7 @@ def open_play_list_file(file_path, playlist_dict):
 
             else:
                 audio_url = line.strip()
-            print(line)
+            # print("line: " + line)
             if audio_url not in playlist_dict:
                 playlist_dict[audio_url] = {STATUS_KEY:"to_play", TITLE_KEY:title}
 
