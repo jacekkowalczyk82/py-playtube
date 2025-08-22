@@ -19,8 +19,7 @@ DEFAULT_PLAYLIST_FILE = HOME + "/.playtube-list.txt"
 STATUS_KEY = "status"
 TITLE_KEY = "title"
 
-AUDIO_FORMAT = "251"
-#AUDIO_FORMAT = "140"
+AUDIO_FORMAT = "ba"  # best audio 
 
 PLAY_ORDER = "LIST_ORDER"
 
