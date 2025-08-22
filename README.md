@@ -94,6 +94,14 @@ or
 
 }
 
+{
+  "action": "ADD_AND_PLAY",
+  "url": "https://www.youtube.com/watch?v=UMQ03kcEM9o",
+  "title": "PARNI_VALJAK_-_BEZ_STRUJE_Live"
+}
+
+
+
 ```
 
 will tell the application to add this given url to the playlist and play it as next. 
