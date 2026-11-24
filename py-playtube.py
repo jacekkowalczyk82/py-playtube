@@ -245,6 +245,8 @@ def download_or_get_local(playlist, audio, local_youtubedl_temp):
         stdout1, stderr1 = process1.communicate()
         file_name_decoded = stdout1.decode("UTF-8")
         file_name = file_name_decoded.strip()
+        print(f"file_name: {str(file_name)}")
+        
     
     if not file_name:
         # this will replace the title from the original playlist txt file

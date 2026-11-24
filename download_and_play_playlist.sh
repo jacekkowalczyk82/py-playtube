@@ -9,9 +9,11 @@ PLAYLIST_DIR=$3
 
 # most preffered at the end 
 preffered_formats_for_download=(
+ba
 234
 140
 251
+ba
 )
 
 # func_get_file_names_for_list() {
